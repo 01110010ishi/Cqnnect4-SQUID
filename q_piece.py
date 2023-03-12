@@ -2,6 +2,8 @@ import sys
 from qiskit import *
 from qiskit import Aer
 from qiskit.tools.visualization import plot_bloch_multivector
+from qiskit.quantum_info import Statevector
+from qiskit.extensions import Initialize
 import matplotlib.pyplot as plt
 import numpy as np
 import io
@@ -36,7 +38,7 @@ class qPiece:
         self.state_vector = self.get_sv()
         if self.state_vector is not None:
             fig = plot_bloch_multivector(self.state_vector).figure
-            # plt.close(fig)
+            plt.close(fig)
             return self.plot_to_surface(fig)
 
     def plot_to_surface(self, plot):
@@ -72,6 +74,18 @@ class qPiece:
         if gate == 'r':
             self.circuit.r(theta, phi, 0)
 
+    def sv_from_angles(self, theta, phi):
+        qc = QuantumCircuit(1)
+        initialize_gate = Initialize(self.state_vector.data)
+        qc.append(initialize_gate, [0])
+
+        qc.u(theta, phi, 0, 0)
+
+        sv_simulator = Aer.get_backend('statevector_simulator')
+        result = execute(qc, backend=sv_simulator).result()
+        sv = result.get_statevector()
+        self.state_vector = sv
+
     def collapsed(self):
         state = self.calculate_probs()
         print(state)
@@ -95,37 +109,11 @@ class qPiece:
         return self.row2
 
 
+
 if __name__ == "__main__":
-    pygame.init()
-    screen = pygame.display.set_mode((800, 600))
-    clock = pygame.time.Clock()
 
     qp = qPiece(2, 0, 5, 0, 0)
     # qp.apply_gate('h')
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-        bloch_sphere = qp.get_bloch_sphere()
-        screen.blit(bloch_sphere, (0, 0))
-        pygame.display.flip()
-        clock.tick(60)
-        stop = False
-        while not stop:
-            gate = input("Gate: ")
-            if gate != 'stop':
-                if gate == 'r':
-                    theta = float(input('theta: '))
-                    phi = float(input('phi: '))
-                else:
-                    theta = None
-                    phi = None
-                qp.apply_gate(gate, theta=theta, phi=phi)
-                bloch_sphere = qp.get_bloch_sphere()
-                screen.blit(bloch_sphere, (0, 0))
-                pygame.display.flip()
-                clock.tick(60)
-            else:
-                stop = True
+    print(qp.state_vector)
+    print(qp.sv_from_angles(10, np.pi))

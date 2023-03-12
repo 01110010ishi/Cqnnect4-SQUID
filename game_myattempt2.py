@@ -7,6 +7,7 @@ from classes.board import Board
 from classes.q_piece import qPiece
 from classes.slider import Slider
 
+
 # import random
 
 class GameUI:
@@ -28,7 +29,6 @@ class GameUI:
         self._board_img = pygame.image.load("./img/board.png")
         self._board_img_numbers = pygame.image.load("./img/board_numbers.png")
         self._font = pygame.font.SysFont('Calibri', 26)
-
 
         # Define the buttons
         self.gate_buttons_left = {
@@ -65,7 +65,7 @@ class GameUI:
         }
 
         self.theta_slider_left = Slider(self._screen, 60, 700, 200, 10, 0, np.pi, 0)
-        self.phi_slider_left = Slider(self._screen, 60, 750, 200, 10, 0, 2*np.pi, 0)
+        self.phi_slider_left = Slider(self._screen, 60, 750, 200, 10, 0, 2 * np.pi, 0)
 
         self.init_ui(player)
 
@@ -177,6 +177,7 @@ class GameUI:
     def update(self):
         pygame.display.update()
 
+
 class myGame:
 
     def __init__(self):
@@ -207,7 +208,7 @@ class myGame:
                 qtext1 = self.gui._font.render(qtext, True, (0, 0, 0))
                 self.gui._screen.blit(qtext1, (900, 10))
 
-                valid_column = False                  # get the first column of the qpiece
+                valid_column = False  # get the first column of the qpiece
                 while not valid_column:
                     for event in pygame.event.get():
                         if event.type == pygame.KEYUP:
@@ -242,7 +243,7 @@ class myGame:
                             self.board.remove_piece(collapsed[0], collapsed[1])
                             self.gui.remove_collapsed_qp(collapsed[0], collapsed[1])
 
-                        #self.q_pieces.remove(qp_underneath)
+                        # self.q_pieces.remove(qp_underneath)
                         if qp_underneath.player == 0:
                             self.p1_qpiece = False
                         else:
@@ -288,7 +289,7 @@ class myGame:
                             self.gui.remove_collapsed_qp(collapsed2[0], collapsed2[1])
                             self.board.remove_piece(collapsed2[0], collapsed2[1])
 
-                        #self.q_pieces.remove(qp_underneath)
+                        # self.q_pieces.remove(qp_underneath)
                         if qp_underneath.player == 0:
                             self.p1_qpiece = False
                         else:
@@ -309,7 +310,6 @@ class myGame:
                 else:
                     self.p2_qpiece = True
 
-
                 # APPLY GATES
                 bloch_sphere = qp.get_bloch_sphere()
                 self.gui.draw_blochsphere(bloch_sphere, player)
@@ -317,16 +317,24 @@ class myGame:
                     self.gui.draw_buttons_left()
                     buttons = self.gui.gate_buttons_left
                     surfaces = self.gui.gate_surfaces_left
-                    self.gui.update()
+                    theta_slider = self.gui.theta_slider_left
+                    phi_slider = self.gui.phi_slider_left
                 else:
                     self.gui.draw_buttons_right()
                     buttons = self.gui.gate_buttons_right
                     surfaces = self.gui.gate_surfaces_right
-                    self.gui.update()
+                    theta_slider = self.gui.theta_slider_left
+                    phi_slider = self.gui.phi_slider_left
                 end_gate_input = False
                 while not end_gate_input:
                     for event in pygame.event.get():
+                        # self.gui.theta_slider_left.handle_event(event)
+                        # self.gui.phi_slider_left.handle_event(event)
                         if event.type == pygame.MOUSEBUTTONDOWN:
+                            if theta_slider.knob_rect.collidepoint(event.pos):
+                                theta_slider.dragging = True
+                            elif phi_slider.knob_rect.collidepoint(event.pos):
+                                phi_slider.dragging = True
                             for button in buttons:
                                 if buttons[button].collidepoint(event.pos):
                                     if button == 'Done':
@@ -338,36 +346,80 @@ class myGame:
                                         bloch_sphere = qp.get_bloch_sphere()
                                         self.gui.draw_blochsphere(bloch_sphere, player)
                                         self.gui.update()
-                                    #self.gui._screen.blit(surfaces[button], buttons[button])
+                                self.gui._screen.blit(surfaces[button], buttons[button])
+                            self.gui.draw_buttons_left()
+                            self.gui.draw_buttons_right()
+                            self.gui.update()
 
-                    self.gui.draw_buttons_right()
-                    self.gui.draw_buttons_left()
-                    #pygame.display.flip()
+                        elif event.type == pygame.MOUSEBUTTONUP:
+                            theta_slider.dragging = False
+                            phi_slider.dragging = False
+                            theta = theta_slider.value
+                            phi = phi_slider.value
+                            qp.sv_from_angles(theta, phi)
+                            bloch_sphere = qp.get_bloch_sphere()
+                            self.gui.draw_blochsphere(bloch_sphere, player)
+                        elif event.type == pygame.MOUSEMOTION:
+                            if theta_slider.dragging:
+                                theta_slider.knob_rect.x = event.pos[0]
+                                if theta_slider.knob_rect.x < theta_slider.rect.x:
+                                    theta_slider.knob_rect.x = theta_slider.rect.x
+                                elif theta_slider.knob_rect.x > theta_slider.rect.x + theta_slider.rect.width:
+                                    theta_slider.knob_rect.x = theta_slider.rect.x + theta_slider.rect.width
+                                theta_slider.value = theta_slider.min_value + (
+                                            theta_slider.knob_rect.x - theta_slider.rect.x) * (
+                                                             theta_slider.max_value - theta_slider.min_value) / theta_slider.rect.width
+                                theta = theta_slider.value
+                                phi = phi_slider.value
+                                qp.sv_from_angles(theta, phi)
+                                bloch_sphere = qp.get_bloch_sphere()
+                                self.gui.draw_blochsphere(bloch_sphere, player)
+
+                            elif phi_slider.dragging:
+                                phi_slider.knob_rect.x = event.pos[0]
+                                if phi_slider.knob_rect.x < phi_slider.rect.x:
+                                    phi_slider.knob_rect.x = phi_slider.rect.x
+                                elif phi_slider.knob_rect.x > phi_slider.rect.x + phi_slider.rect.width:
+                                    phi_slider.knob_rect.x = phi_slider.rect.x + phi_slider.rect.width
+                                phi_slider.value = phi_slider.min_value + (
+                                        phi_slider.knob_rect.x - phi_slider.rect.x) * (
+                                                           phi_slider.max_value - phi_slider.min_value) / phi_slider.rect.width
+                                theta = theta_slider.value
+                                phi = phi_slider.value
+                                qp.sv_from_angles(theta, phi)
+                                bloch_sphere = qp.get_bloch_sphere()
+                                self.gui.draw_blochsphere(bloch_sphere, player)
+
+                    self.gui.theta_slider_left.draw()
+                    self.gui.phi_slider_left.draw()
+                    # Update the knob positions
+                    self.gui.theta_slider_left.update_knob()
+                    self.gui.phi_slider_left.update_knob()
+                    pygame.display.flip()
                     self.gui.update()
 
                     probs = qp.calculate_probs()
-                    probs[0] = (((probs[0] * 100)//0.1) / 10)
+                    probs[0] = (((probs[0] * 100) // 0.1) / 10)
                     probs[1] = (((probs[1] * 100) // 0.1) / 10)
 
                     text1 = "P of Qpiece1: " + str(probs[0]) + '%'
                     text2 = "P of Qpiece2: " + str(probs[1]) + '%'
-                    #1700x 700
-                    xheight= 400
-                    if player == 0: #red player, left side
-                        pygame.draw.rect(self.gui._screen, (255, 255, 255), [100, xheight+50, 380, 500])
+                    # 1700x 700
+                    xheight = 400
+                    if player == 0:  # red player, left side
+                        pygame.draw.rect(self.gui._screen, (255, 255, 255), [100, xheight + 50, 380, 500])
 
                         text1 = self.gui._font.render(text1, True, (0, 0, 0))
-                        self.gui._screen.blit(text1, (100, xheight+100))
+                        self.gui._screen.blit(text1, (100, xheight + 100))
                         text2 = self.gui._font.render(text2, True, (0, 0, 0))
-                        self.gui._screen.blit(text2, (100, xheight+150))
-                    if player == 1: #yellow player, right side
-                        pygame.draw.rect(self.gui._screen, (255, 255, 255), [1400, xheight+50, 500, 500])
+                        self.gui._screen.blit(text2, (100, xheight + 150))
+                    if player == 1:  # yellow player, right side
+                        pygame.draw.rect(self.gui._screen, (255, 255, 255), [1400, xheight + 50, 500, 500])
 
                         text1 = self.gui._font.render(text1, True, (0, 0, 0))
-                        self.gui._screen.blit(text1, (1400, xheight+100))
+                        self.gui._screen.blit(text1, (1400, xheight + 100))
                         text2 = self.gui._font.render(text2, True, (0, 0, 0))
-                        self.gui._screen.blit(text2, (1400, xheight+150))
-
+                        self.gui._screen.blit(text2, (1400, xheight + 150))
 
                 # check if player won
                 player_won = self.board.check_player_wins(player)
