@@ -62,5 +62,5 @@ class Board:
                 return row
         return -1
 
-    def remove_qpiece(self, col, row):
+    def remove_piece(self, col, row):
         self._grid[row][col - 1] = None

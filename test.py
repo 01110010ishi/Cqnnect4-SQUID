@@ -7,8 +7,6 @@ import numpy as np
 import io
 import pygame
 
-
-
 class qPiece:
 
     # everytime a q_piece object is created...
@@ -36,7 +34,7 @@ class qPiece:
         self.state_vector = self.get_sv()
         if self.state_vector is not None:
             fig = plot_bloch_multivector(self.state_vector).figure
-            # plt.close(fig)
+            plt.close(fig)
             return self.plot_to_surface(fig)
 
     def plot_to_surface(self, plot):
@@ -72,6 +70,7 @@ class qPiece:
         if gate == 'r':
             self.circuit.r(theta, phi, 0)
 
+
     def collapsed(self):
         state = self.calculate_probs()
         print(state)
@@ -93,7 +92,6 @@ class qPiece:
 
     def get_row2(self):
         return self.row2
-
 
 if __name__ == "__main__":
     pygame.init()
