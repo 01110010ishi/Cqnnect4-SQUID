@@ -32,12 +32,13 @@ class qPiece:
         print("now measuring")
         self.circuit.measure(0, 0)
         self.state_vector = self.get_sv()
-
     # plots the bloch sphere of the current state-vector of qubit
     def get_bloch_sphere(self):
         self.state_vector = self.get_sv()
         if self.state_vector is not None:
-            fig = plot_bloch_multivector(self.state_vector).figure
+            fig = plot_bloch_multivector(self.state_vector)
+            fig.axes[0].set_title("Q-Piece", y=1.1, fontsize=20)
+            fig = fig.figure
             plt.close(fig)
             return self.plot_to_surface(fig)
 
@@ -72,19 +73,17 @@ class qPiece:
         if gate == 'h':
             self.circuit.h(0)
         if gate == 'r':
+            self.circuit.reset(0)
             self.circuit.r(theta, phi, 0)
 
+    '''
     def sv_from_angles(self, theta, phi):
         qc = QuantumCircuit(1)
-        initialize_gate = Initialize(self.state_vector.data)
-        qc.append(initialize_gate, [0])
-
-        qc.u(theta, phi, 0, 0)
-
+        qc.r(theta, phi, 0)
         sv_simulator = Aer.get_backend('statevector_simulator')
         result = execute(qc, backend=sv_simulator).result()
         sv = result.get_statevector()
-        self.state_vector = sv
+        self.state_vector = sv'''
 
     def collapsed(self):
         state = self.calculate_probs()
